@@ -1,7 +1,6 @@
-from PySide6.QtCore import Qt
+from PySide6.QtCore import Qt, Signal
 from PySide6.QtWidgets import (
     QApplication,
-    QGridLayout,
     QHBoxLayout,
     QLabel,
     QMainWindow,
@@ -26,6 +25,7 @@ import os
 # TODO Pause feature
 # TODO milisecond instead of second
 # TODO sortable list, using drag and drop
+# TODO change a few class to use signal
 # FIXME if the user click the button too fast (when it still animating sliding) it shows weird behaviour
 
 
@@ -144,8 +144,7 @@ class ReviewTestPane(QWidget):
         self.update_test_list()
 
     # Open review test window
-    def review_test(self):
-        test_name = self.sender().text()
+    def review_test(self, test_name: str):
         test_data = self.data[test_name]
 
         # Prevent opening an already opened test review
@@ -165,41 +164,14 @@ class ReviewTestPane(QWidget):
             self.data = orjson.loads(f.read())
 
         # Create a new test list widget everytime this function is called
-        test_list = QWidget()
-        test_list.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Minimum)
-        test_list.setLayout(QVBoxLayout())
-        test_list.layout().setSpacing(0)
-        test_list.layout().setContentsMargins(4,4,4,4)
-
-        # Add buttons (test name and delete test) to the grid
-        test_names = list(self.data.keys())
-        for idx, name in enumerate(test_names):
-            test_item = QWidget()
-            test_item.setLayout(QHBoxLayout())
-            test_item.layout().setContentsMargins(4,4,4,4)
-
-            test_name_btn = QPushButton(name)
-            test_name_btn.setFixedWidth(190)
-            test_name_btn.setStyleSheet("text-align: left;")
-            test_name_btn.clicked.connect(self.review_test)
-            test_item.layout().addWidget(test_name_btn)
-
-            del_test_btn = QPushButton("Hapus")
-            del_test_btn.setObjectName(f"deleteBtn{idx}")
-            del_test_btn.clicked.connect(self.delete_test)
-            test_item.layout().addWidget(del_test_btn)
-
-            test_list.layout().addWidget(test_item)
+        test_list = TestListWidget(self.data)
+        test_list.testNameClicked.connect(self.review_test)
+        test_list.deleteTest.connect(self.delete_test)
 
         self.test_list_scroll.setWidget(test_list)
 
     # Delete test review from list
-    def delete_test(self):
-        idx = int(self.sender().objectName().replace("deleteBtn", ""))
-        test_list = self.test_list_scroll.widget()
-        test_item = test_list.layout().itemAt(idx).widget()
-        test_name = test_item.layout().itemAt(0).widget().text()
-
+    def delete_test(self, test_name: str):
         # Confirmation
         qm = QMessageBox
         warning = qm.warning(
@@ -224,6 +196,49 @@ class ReviewTestPane(QWidget):
 
         self.update_test_list()
 
+class TestListWidget(QWidget):
+    # Signal
+    testNameClicked = Signal(str)
+    deleteTest = Signal(str)
+
+    def __init__(self, data) -> None:
+        super().__init__()
+        self.data = data
+
+        self.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Minimum)
+        self.setLayout(QVBoxLayout())
+        self.layout().setSpacing(0)
+        self.layout().setContentsMargins(4,4,4,4)
+
+        # Add buttons (test name and delete test) to the grid
+        test_names = list(self.data.keys())
+        for idx, name in enumerate(test_names):
+            test_item = QWidget()
+            test_item.setLayout(QHBoxLayout())
+            test_item.layout().setContentsMargins(4,4,4,4)
+
+            test_name_btn = QPushButton(name)
+            test_name_btn.setFixedWidth(190)
+            test_name_btn.setStyleSheet("text-align: left;")
+            test_name_btn.clicked.connect(self.review_test)
+            test_item.layout().addWidget(test_name_btn)
+
+            del_test_btn = QPushButton("Hapus")
+            del_test_btn.setObjectName(f"deleteBtn{idx}")
+            del_test_btn.clicked.connect(self.delete_test)
+            test_item.layout().addWidget(del_test_btn)
+
+            self.layout().addWidget(test_item)
+
+    def review_test(self):
+        test_name = self.sender().text()
+        self.testNameClicked.emit(test_name)
+
+    def delete_test(self):
+        idx = int(self.sender().objectName().replace("deleteBtn", ""))
+        test_item = self.layout().itemAt(idx).widget()
+        test_name = test_item.layout().itemAt(0).widget().text()
+        self.deleteTest.emit(test_name)
 
 if __name__ == "__main__":
     app = QApplication([])
