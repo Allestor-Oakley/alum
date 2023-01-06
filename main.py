@@ -1,4 +1,5 @@
-from PySide6.QtCore import Qt, Signal
+from PySide6.QtCore import QMimeData, Qt, Signal
+from PySide6.QtGui import QDrag, QPixmap
 from PySide6.QtWidgets import (
     QApplication,
     QHBoxLayout,
@@ -153,6 +154,7 @@ class ReviewTestPane(QWidget):
         test_list = TestListWidget(self.data)
         test_list.testNameClicked.connect(self.review_test)
         test_list.deleteTestClicked.connect(self.delete_test)
+        test_list.dataOrderChanged.connect(self.update_data_order)
 
         self.test_list_scroll.setWidget(test_list)
 
@@ -196,15 +198,26 @@ class ReviewTestPane(QWidget):
 
         self.update_test_list()
 
+    # data Updated
+    def update_data_order(self, new_data):
+        self.data = new_data
+
+        with open(self.data_path, "wb") as f:
+            f.write(orjson.dumps(self.data, option=ORJSON_OPTIONS))
+
+        self.update_test_list()
+
 class TestListWidget(QWidget):
     # Signal
     testNameClicked = Signal(str)
     deleteTestClicked = Signal(str)
+    dataOrderChanged =  Signal(dict)
 
     def __init__(self, data) -> None:
         super().__init__()
         self.data = data
 
+        self.setAcceptDrops(True)
         self.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Minimum)
         self.setLayout(QVBoxLayout())
         self.layout().setSpacing(0)
@@ -224,6 +237,30 @@ class TestListWidget(QWidget):
 
     def delete_test(self, test_name: str):
         self.deleteTestClicked.emit(test_name)
+
+    def dragEnterEvent(self, event):
+        event.accept()
+
+    def dropEvent(self, event):
+        pos = event.position()
+        widget = event.source()
+
+        for n in range(self.layout().count()):
+            # Get the widget at each index in turn.
+            w = self.layout().itemAt(n).widget()
+            if pos.y() < w.y() + w.size().height() // 2:
+                # We didn't drag past this widget.
+                # insert to the left of it.
+                self.layout().insertWidget(n-1, widget)
+                break
+
+        new_data = {}
+        for n in range(self.layout().count()):
+            test_name = self.layout().itemAt(n).widget().test_name
+            new_data[test_name] = self.data[test_name]
+
+        event.accept()
+        self.dataOrderChanged.emit(new_data)
 
 class TestListItem(QWidget):
     testNameClicked = Signal(str)
@@ -251,6 +288,18 @@ class TestListItem(QWidget):
 
     def delete_btn_clicked(self):
         self.deleteTestClicked.emit(self.test_name)
+
+    def mouseMoveEvent(self, event):
+        if event.buttons() == Qt.LeftButton:
+            drag = QDrag(self)
+            mime = QMimeData()
+            drag.setMimeData(mime)
+
+            pixmap = QPixmap(self.size())
+            self.render(pixmap)
+            drag.setPixmap(pixmap)
+
+            drag.exec(Qt.MoveAction)
 
 if __name__ == "__main__":
     app = QApplication([])
