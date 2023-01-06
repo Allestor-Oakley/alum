@@ -25,7 +25,6 @@ import os
 
 # TODO Pause feature
 # TODO milisecond instead of second
-# TODO sortable list, using drag and drop
 # TODO change a few class to use signal
 # FIXME if the user click the button too fast (when it still animating sliding) it shows weird behaviour
 
@@ -207,11 +206,12 @@ class ReviewTestPane(QWidget):
 
         self.update_test_list()
 
+
 class TestListWidget(QWidget):
     # Signal
     testNameClicked = Signal(str)
     deleteTestClicked = Signal(str)
-    dataOrderChanged =  Signal(dict)
+    dataOrderChanged = Signal(dict)
 
     def __init__(self, data) -> None:
         super().__init__()
@@ -221,7 +221,7 @@ class TestListWidget(QWidget):
         self.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Minimum)
         self.setLayout(QVBoxLayout())
         self.layout().setSpacing(0)
-        self.layout().setContentsMargins(4,4,4,4)
+        self.layout().setContentsMargins(4, 4, 4, 4)
 
         # Add buttons (test name and delete test) to the grid
         test_names = list(self.data.keys())
@@ -251,7 +251,7 @@ class TestListWidget(QWidget):
             if pos.y() < w.y() + w.size().height() // 2:
                 # We didn't drag past this widget.
                 # insert to the left of it.
-                self.layout().insertWidget(n-1, widget)
+                self.layout().insertWidget(n - 1, widget)
                 break
 
         new_data = {}
@@ -262,6 +262,7 @@ class TestListWidget(QWidget):
         event.accept()
         self.dataOrderChanged.emit(new_data)
 
+
 class TestListItem(QWidget):
     testNameClicked = Signal(str)
     deleteTestClicked = Signal(str)
@@ -271,7 +272,7 @@ class TestListItem(QWidget):
         self.test_name = test_name
 
         self.setLayout(QHBoxLayout())
-        self.layout().setContentsMargins(4,4,4,4)
+        self.layout().setContentsMargins(4, 4, 4, 4)
 
         test_name_btn = QPushButton(test_name)
         test_name_btn.setFixedWidth(190)
@@ -300,6 +301,7 @@ class TestListItem(QWidget):
             drag.setPixmap(pixmap)
 
             drag.exec(Qt.MoveAction)
+
 
 if __name__ == "__main__":
     app = QApplication([])
