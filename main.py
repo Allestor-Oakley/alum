@@ -143,6 +143,19 @@ class ReviewTestPane(QWidget):
         # Update everytime it starts
         self.update_test_list()
 
+    # Called everytime the program want to update test list because
+    # an update on data.json
+    def update_test_list(self):
+        with open(self.data_path, "r") as f:
+            self.data = orjson.loads(f.read())
+
+        # Create a new test list widget everytime this function is called
+        test_list = TestListWidget(self.data)
+        test_list.testNameClicked.connect(self.review_test)
+        test_list.deleteTest.connect(self.delete_test)
+
+        self.test_list_scroll.setWidget(test_list)
+
     # Open review test window
     def review_test(self, test_name: str):
         test_data = self.data[test_name]
@@ -156,19 +169,6 @@ class ReviewTestPane(QWidget):
         review_test = ReviewTestWindow(test_name, test_data, self)
         self.test_review_windows.append(review_test)
         self.test_review_windows[-1].show()
-
-    # Called everytime the program want to update test list because
-    # an update on data.json
-    def update_test_list(self):
-        with open(self.data_path, "r") as f:
-            self.data = orjson.loads(f.read())
-
-        # Create a new test list widget everytime this function is called
-        test_list = TestListWidget(self.data)
-        test_list.testNameClicked.connect(self.review_test)
-        test_list.deleteTest.connect(self.delete_test)
-
-        self.test_list_scroll.setWidget(test_list)
 
     # Delete test review from list
     def delete_test(self, test_name: str):
