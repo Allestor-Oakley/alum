@@ -167,21 +167,29 @@ class ReviewTestPane(QWidget):
         # Create a new test list widget everytime this function is called
         test_list = QWidget()
         test_list.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Minimum)
-        test_list.setLayout(QGridLayout())
+        test_list.setLayout(QVBoxLayout())
+        test_list.layout().setSpacing(0)
+        test_list.layout().setContentsMargins(4,4,4,4)
 
         # Add buttons (test name and delete test) to the grid
         test_names = list(self.data.keys())
         for idx, name in enumerate(test_names):
+            test_item = QWidget()
+            test_item.setLayout(QHBoxLayout())
+            test_item.layout().setContentsMargins(4,4,4,4)
+
             test_name_btn = QPushButton(name)
             test_name_btn.setFixedWidth(190)
             test_name_btn.setStyleSheet("text-align: left;")
             test_name_btn.clicked.connect(self.review_test)
-            test_list.layout().addWidget(test_name_btn, idx, 0)
+            test_item.layout().addWidget(test_name_btn)
 
             del_test_btn = QPushButton("Hapus")
             del_test_btn.setObjectName(f"deleteBtn{idx}")
             del_test_btn.clicked.connect(self.delete_test)
-            test_list.layout().addWidget(del_test_btn, idx, 1)
+            test_item.layout().addWidget(del_test_btn)
+
+            test_list.layout().addWidget(test_item)
 
         self.test_list_scroll.setWidget(test_list)
 
@@ -189,7 +197,8 @@ class ReviewTestPane(QWidget):
     def delete_test(self):
         idx = int(self.sender().objectName().replace("deleteBtn", ""))
         test_list = self.test_list_scroll.widget()
-        test_name = test_list.layout().itemAtPosition(idx, 0).widget().text()
+        test_item = test_list.layout().itemAt(idx).widget()
+        test_name = test_item.layout().itemAt(0).widget().text()
 
         # Confirmation
         qm = QMessageBox
