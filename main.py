@@ -25,8 +25,8 @@ import os
 
 # TODO Pause feature
 # TODO milisecond instead of second
-# TODO change a few class to use signal
 # FIXME if the user click the button too fast (when it still animating sliding) it shows weird behaviour
+# FIXME after renaming, the test list scroll to the top
 
 
 class MainWindow(QMainWindow):
@@ -182,7 +182,7 @@ class ReviewTestPane(QWidget):
         qm = QMessageBox
         warning = qm.warning(
             self,
-            "konfirmasi",
+            "Konfirmasi",
             f'Apakah anda ingin menghapus tes "{test_name}"?',
             qm.Yes | qm.No,
         )
@@ -208,8 +208,6 @@ class ReviewTestPane(QWidget):
 
         with open(self.data_path, "wb") as f:
             f.write(orjson.dumps(self.data, option=ORJSON_OPTIONS))
-
-        self.update_test_list()
 
 
 class TestListWidget(QWidget):
