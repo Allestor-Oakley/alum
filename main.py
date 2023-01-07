@@ -167,9 +167,14 @@ class ReviewTestPane(QWidget):
                 return
 
         # Add window to the list and show it
-        review_test = ReviewTestWindow(test_name, test_data, self)
+        review_test = ReviewTestWindow(test_name, test_data, self.data_path)
+        review_test.windowClosed.connect(self.close_window)
+        review_test.dataUpdated.connect(self.update_test_list)
         self.test_review_windows.append(review_test)
         self.test_review_windows[-1].show()
+
+    def close_window(self, widget):
+        self.test_review_windows.remove(widget)
 
     # Delete test review from list
     def delete_test(self, test_name: str):

@@ -1,4 +1,4 @@
-from PySide6.QtCore import Qt, Slot
+from PySide6.QtCore import Qt, Signal, Slot
 from PySide6.QtGui import QColor
 from PySide6.QtWidgets import (
     QComboBox,
@@ -20,22 +20,19 @@ from .custom_widgets import SlidingStackedWidget
 from .answer_slide import TestNameDialog
 from ..constants import DAY_INDO, GREEN_BTN_QSS, MONTH_INDO, ORJSON_OPTIONS, TIME_FORMAT
 
-import os
-
 
 class ReviewTestWindow(QWidget):
     SORT_METHODS = ("number", "accuracy", "time")
 
-    def __init__(self, test_name, test_data, parent):
+    # Signals
+    dataUpdated = Signal()
+    windowClosed = Signal(QWidget)
+
+    def __init__(self, test_name: str, test_data: dict, data_path: str):
         super().__init__()
         self.test_name = test_name
         self.test_data = test_data
-        self.parent_widget = parent
-
-        self.root_path = (
-            self.parent_widget.parent().parent().parent().parent().get_root_abspath()
-        )
-        self.data_path = os.path.join(self.root_path, "data.json")
+        self.data_path = data_path
 
         self.setFixedSize(500, 550)
         self.setWindowTitle(f"Tinjauan tes '{test_name}'")
@@ -71,8 +68,7 @@ class ReviewTestWindow(QWidget):
         self.init_test_note_slide()
 
     def closeEvent(self, event):
-        # Remove this widget from ReviewTestPane.review_test_windows
-        self.parent_widget.test_review_windows.remove(self)
+        self.windowClosed.emit(self)
         # Quit
         event.accept()
 
@@ -389,7 +385,7 @@ class ReviewTestWindow(QWidget):
     # When rename test clicked
     def rename_test(self):
         dialog = TestNameDialog(
-            self.data_path, self.test_name, self.test_data["tanggal_tes"]
+            self.data_path, self.test_data["tanggal_tes"], self.test_name
         )
 
         # Update in file
@@ -413,7 +409,7 @@ class ReviewTestWindow(QWidget):
         self.test_name = new_name
 
         # Update test list
-        self.parent_widget.update_test_list()
+        self.dataUpdated.emit()
 
     @Slot(QTableWidgetItem)
     def table_item_clicked(self, it: QTableWidgetItem):
@@ -458,7 +454,7 @@ class ReviewTestWindow(QWidget):
             f.write(orjson.dumps(data, option=ORJSON_OPTIONS))
 
         # Update list to avoid inconsistent data
-        self.parent_widget.update_test_list()
+        self.dataUpdated.emit()
 
     def save_test_note(self):
         with open(self.data_path, "r") as f:
@@ -470,7 +466,7 @@ class ReviewTestWindow(QWidget):
             f.write(orjson.dumps(data, option=ORJSON_OPTIONS))
 
         # Update list to avoid inconsistent data
-        self.parent_widget.update_test_list()
+        self.dataUpdated.emit()
 
 
 class ChangeAnswerDialog(QDialog):
