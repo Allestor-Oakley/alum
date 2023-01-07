@@ -9,7 +9,7 @@ from PySide6.QtWidgets import (
     QVBoxLayout,
     QWidget,
 )
-from PySide6.QtCore import QTimer, Qt
+from PySide6.QtCore import QTimer, Qt, Signal
 
 from .custom_widgets import SlidingStackedWidget
 from .answer_slide import AnswerKeySlide
@@ -136,23 +136,41 @@ class TestWidget(QWidget):
 
         # Answer slide
         self.answers_slide = SlidingStackedWidget()
+        self.right_section.layout().addWidget(self.answers_slide)
+
         for num in range(
             self.first_question_num,
             self.first_question_num + self.question_counts,
         ):
-            answer_view = AnswerWidget(self, num)
-            answer_view.setObjectName(f"answerWidget{num}")
+            is_first = num == self.first_question_num
+            is_last = num == (self.first_question_num + self.question_counts - 1)
+
+            answer_view = AnswerWidget(
+                question_num=num,
+                question_options=self.question_options,
+                show_question_time=self.show_question_time,
+                question_counts=self.question_counts,
+                is_first=is_first,
+                is_last=is_last,
+                show_doubt_button=self.show_doubt_button,
+            )
+            answer_view.answerChanged.connect(self.change_answer)
+            answer_view.moveToQuestion.connect(self.change_question_view)
+            answer_view.doubtButtonClicked.connect(self.doubt_question)
+            answer_view.finishButtonClicked.connect(self.finish_test)
             self.answers_slide.addWidget(answer_view)
-        self.right_section.layout().addWidget(self.answers_slide)
 
         # Set style and other things after all things have been done
         self.change_question_view(self.current_question)
 
     # Just to make things easier
     def get_answer_slide(self, num: int):
-        return self.answers_slide.findChild(AnswerWidget, f"answerWidget{num}")
+        answers_slide: AnswerWidget = self.answers_slide.findChild(
+            AnswerWidget, f"answerWidget{num}"
+        )
+        return answers_slide
 
-    def get_question_btn(self, num: int):
+    def get_question_btn(self, num: int) -> QPushButton:
         return self.left_section.findChild(QPushButton, f"questionButton{num}")
 
     # Called every tick
@@ -215,15 +233,11 @@ class TestWidget(QWidget):
         current.setStyleSheet(current.styleSheet() + selected_style)
 
     # Higlight question button in Question List to yellow,
-    # Highlight currently answered option in AnswerWidget
+    # changed data, and slide to next if the user set automatic_slide_next
     def change_answer(self, num: int, answer: str):
-        question_button_ls = self.get_question_btn(num)
-        question_button_ls.setStyleSheet(
-            question_button_ls.styleSheet() + "border: 1px solid #FFD54F;"
-        )
-        answer_widget_rs = self.get_answer_slide(num)
-        answer_widget_rs.highlight_answer(self.answers[num], answer)
-
+        # Question button in the left side
+        q_btn_ls = self.get_question_btn(num)
+        q_btn_ls.setStyleSheet(q_btn_ls.styleSheet() + "border: 1px solid #FFD54F;")
         self.answers[num] = answer
 
         # Slide to the next question if automatic_slide_next is True
@@ -233,7 +247,7 @@ class TestWidget(QWidget):
     # Toggle notification on question button in left_section
     # This will only get called outside of this function,
     # at AnswerWidget.doubt_button_click
-    def doubt_question(self, num):
+    def doubt_question(self, num: int):
         qb_ls = self.get_question_btn(num)
         qb_ls.toggle_doubt()
 
@@ -257,13 +271,31 @@ class TestWidget(QWidget):
         self.total_timer.stop()
         self.parent().slideInPrev()
 
-    # End timer, start answer_key widget,
-    # this will only be used in self.finish_test function
-    def end_test(self):
+    def finish_test(self, time_up: bool = False):
+        qm = QMessageBox
+
+        # if time_up is True, then there will be no confirmation dialog
+        # even if the user the have not completed all the questions yet
+        if time_up:
+            qm.information(
+                self, "Waktu habis", "Maaf, waktu pengerjaan soal telah habis", qm.Ok
+            )
+        # If there are unanswered questions, show confirmation dialog
+        elif "" in self.answers.values():
+            res = qm().warning(
+                self,
+                "Konfirmasi",
+                "Masih ada pertanyaan yang belum terjawab, apa anda yakin ingin menyelesaikan tes?",
+                qm.Yes | qm.No,
+            )
+            if res == qm.No:
+                return
+
         # Stop timer
         self.total_timer.stop()
         current_answer = self.get_answer_slide(self.current_question)
         current_answer.timer.stop()
+
         # Start answer key widget
         answer_key = AnswerKeySlide(
             first_question_num=self.first_question_num,
@@ -272,31 +304,6 @@ class TestWidget(QWidget):
         )
         self.parent().addWidget(answer_key)
         self.parent().slideInNext()
-
-    def finish_test(self, time_up: bool = False):
-        qm = QMessageBox
-
-        # if time_up is True, than there will be no confirmation dialog if user
-        # have not completed all the question
-        if time_up:
-            qm.information(
-                self, "Waktu habis", "Maaf, waktu pengerjaan soal telah habis", qm.Ok
-            )
-            self.end_test()
-            return
-
-        # If there are unanswered questions
-        if "" in self.answers.values():
-            res = qm().warning(
-                self,
-                "Konfirmasi",
-                "Masih ada pertanyaan yang belum terjawab, apa anda yakin ingin menyelesaikan tes?",
-                qm.Yes | qm.No,
-            )
-            if res == qm.Yes:
-                self.end_test()
-        else:
-            self.end_test()
 
 
 # Question number button on the left side
@@ -322,7 +329,9 @@ class QuestionNumberButton(QPushButton):
         self.doubt = False
         self.toggle_doubt()
 
-    # This will only be used outside of this class
+    # This will only be used in TestWidget,
+    # because this function can only be triggered
+    # by button in AnswerWidget
     def toggle_doubt(self):
         self.notification.setVisible(self.doubt)
         self.doubt = not self.doubt
@@ -332,13 +341,37 @@ class QuestionNumberButton(QPushButton):
 
 # Answer widget for each slide
 class AnswerWidget(QWidget):
-    def __init__(self, root: TestWidget, question_num: int):
+    # Signal
+    doubtButtonClicked = Signal(int)
+    answerChanged = Signal(int, str)
+    moveToQuestion = Signal(int)
+    finishButtonClicked = Signal()
+
+    def __init__(
+        self,
+        question_num: int,
+        question_options: list,
+        show_question_time: bool,
+        question_counts: int,
+        is_first: bool,
+        is_last: bool,
+        show_doubt_button: bool,
+    ):
         super().__init__()
-        # this is just TestWidget, I use this because most of the data is stored there
-        self.root = root
+
         self.question_num = question_num
+        self.show_question_time = show_question_time
+        self.question_options = question_options
+        self.question_counts = question_counts
+        self.is_first = is_first
+        self.is_last = is_last
+        self.show_doubt_button = show_doubt_button
 
         self.setLayout(QVBoxLayout())
+        self.setObjectName(f"answerWidget{self.question_num}")
+
+        # Inner state
+        self.current_answer = ""
 
         # Inner timer
         self.timer = QTimer()
@@ -356,7 +389,7 @@ class AnswerWidget(QWidget):
 
         # Question time
         self.question_time = QLabel("")
-        if self.root.show_question_time:
+        if self.show_question_time:
             self.question_time.setText("00:00")
             self.question_time.setStyleSheet("font-size: 18px;")
             self.question_time.setAlignment(Qt.AlignTop)
@@ -392,13 +425,12 @@ class AnswerWidget(QWidget):
         self.layout().addWidget(self.middle_section)
 
         # Answer option buttons
-        for option in self.root.question_options:
+        for option in self.question_options:
             button = SquareButton(option, objectName=f"answerButton{option}")
             button.clicked.connect(self.choose_answer)
             button_font = button.font()
             button_font.setPointSize(24)
             button.setFont(button_font)
-            # TODO damn, size is fucking confusing here in qt
             button.setMaximumSize(200, 200)
             self.middle_section.layout().addWidget(button)
 
@@ -411,16 +443,16 @@ class AnswerWidget(QWidget):
 
         # Previous question button
         # hide the button if this is the first question
-        if self.question_num != self.root.first_question_num:
+        if self.is_first:
+            self.prev_button = QWidget()
+        else:
             self.prev_button = QPushButton("<- Sebelumnya")
             self.prev_button.clicked.connect(lambda: self.change_question(-1))
-        else:
-            self.prev_button = QWidget()
         self.bottom_section.layout().addWidget(self.prev_button)
 
         # Doubt buttons
         # set it to plain QWidget if the user choose not to show doubt button
-        if self.root.show_doubt_button:
+        if self.show_doubt_button:
             self.doubt_button = QPushButton("Ragu-ragu")
             self.doubt_button.setCheckable(True)
             self.doubt_button.clicked.connect(self.doubt_button_click)
@@ -430,23 +462,23 @@ class AnswerWidget(QWidget):
 
         # Next question button
         # if this is the last question, then change the button to "Finish button"
-        if (
-            self.question_num
-            != self.root.question_counts + self.root.first_question_num - 1
-        ):
-            self.next_button = QPushButton("Berikutnya ->")
-            self.next_button.clicked.connect(lambda: self.change_question(1))
-        else:
+        if self.is_last:
             self.next_button = QPushButton("Selesai")
             self.next_button.setStyleSheet(GREEN_BTN_QSS)
-            self.next_button.clicked.connect(self.root.finish_test)
+            self.next_button.clicked.connect(self.finishButtonClicked.emit)
+        else:
+            self.next_button = QPushButton("Berikutnya ->")
+            self.next_button.clicked.connect(lambda: self.change_question(1))
         self.bottom_section.layout().addWidget(self.next_button)
 
     # Callback when choosing answer
     def choose_answer(self):
-        self.root.change_answer(self.question_num, self.sender().text())
+        new_answer = self.sender().text()
+        self.highlight_answer(self.current_answer, new_answer)
+        self.current_answer = new_answer
+        self.answerChanged.emit(self.question_num, new_answer)
 
-    # Highlight option button, this function is only used outside this class
+    # Highlight option button
     # if the previous answer has been selected, remove the style
     # then, highlight the new answer
     def highlight_answer(self, prev_answer, answer):
@@ -458,16 +490,16 @@ class AnswerWidget(QWidget):
         current = self.middle_section.findChild(QPushButton, f"answerButton{answer}")
         current.setStyleSheet("background: #3F51B5;color: white;")
 
-    # idx_move is either 1 or -1
+    # idx_move is either 1 (next) or -1 (previous)
     def change_question(self, idx_move):
-        self.root.change_question_view(self.root.current_question + idx_move)
+        self.moveToQuestion.emit(self.question_num + idx_move)
 
     def doubt_button_click(self):
         # If user haven't select any answer
-        if self.root.answers[self.root.current_question] == "":
+        if self.current_answer == "":
             self.doubt_button.setChecked(False)
             return
-        self.root.doubt_question(self.root.current_question)
+        self.doubtButtonClicked.emit(self.question_num)
 
     ### TIMER
     def start_timer(self):
@@ -482,7 +514,7 @@ class AnswerWidget(QWidget):
         if self.timer_on == False:
             return
         self.timer_count += 1
-        if self.root.show_question_time:
+        if self.show_question_time:
             seconds = str(self.timer_count % 60).zfill(2)
             minutes = str(self.timer_count // 60).zfill(2)
             self.question_time.setText(f"{minutes}:{seconds}")
