@@ -9,6 +9,7 @@ from PySide6.QtWidgets import (
     QCheckBox,
     QPushButton,
 )
+
 from .custom_widgets import SlidingStackedWidget
 from .test_slide import TestWidget
 

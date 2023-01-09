@@ -1,3 +1,7 @@
+from math import ceil
+from datetime import datetime
+import os
+
 from PySide6.QtWidgets import (
     QDialog,
     QGridLayout,
@@ -12,6 +16,7 @@ from PySide6.QtWidgets import (
     QPushButton,
 )
 from PySide6.QtCore import Qt
+import orjson
 
 from .finish_slide import FinishSlide
 from ..constants import (
@@ -20,11 +25,6 @@ from ..constants import (
     GREEN_BTN_QSS,
     TIME_FORMAT,
 )
-
-from math import ceil
-from datetime import datetime
-import orjson
-import os
 
 
 # Answer key view slide

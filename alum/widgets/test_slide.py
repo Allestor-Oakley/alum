@@ -1,3 +1,5 @@
+from math import ceil
+
 from PySide6.QtWidgets import (
     QGridLayout,
     QHBoxLayout,
@@ -14,8 +16,6 @@ from PySide6.QtCore import QTimer, Qt, Signal
 from .custom_widgets import SlidingStackedWidget
 from .answer_slide import AnswerKeySlide
 from ..constants import GREEN_BTN_QSS, RED_BTN_QSS
-
-from math import ceil
 
 
 # Test view slide

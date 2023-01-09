@@ -1,3 +1,5 @@
+from datetime import datetime
+
 from PySide6.QtCore import Qt, Signal, Slot
 from PySide6.QtGui import QColor
 from PySide6.QtWidgets import (
@@ -14,7 +16,6 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 import orjson
-from datetime import datetime
 
 from .custom_widgets import SlidingStackedWidget
 from .answer_slide import TestNameDialog

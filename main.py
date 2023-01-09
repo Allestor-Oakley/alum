@@ -1,3 +1,5 @@
+import os
+
 from PySide6.QtCore import QMimeData, Qt, Signal
 from PySide6.QtGui import QDrag, QPixmap
 from PySide6.QtWidgets import (
@@ -13,15 +15,13 @@ from PySide6.QtWidgets import (
     QSizePolicy,
 )
 import orjson
+import qdarktheme
 
 from alum.widgets.custom_widgets import SlidingStackedWidget
 from alum.widgets.settings_slide import TestSettings
 from alum.widgets.review_window import ReviewTestWindow
 from alum.constants import ORJSON_OPTIONS
 
-import qdarktheme
-
-import os
 
 # TODO Pause feature
 # TODO milisecond instead of second
