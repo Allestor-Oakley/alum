@@ -413,7 +413,7 @@ class ReviewTestWindow(QWidget):
 
     @Slot(QTableWidgetItem)
     def table_item_clicked(self, it: QTableWidgetItem):
-        question_num = it.row() + self.test_data["nomor_pertama"]
+        question_num = int(self.table.item(it.row(), 0).text())
 
         options = self.test_data["opsi_soal"].copy()
         options.append("tidak ada")
