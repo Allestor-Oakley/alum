@@ -242,7 +242,9 @@ class TestWidget(QWidget):
 
         # Slide to the next question if automatic_slide_next is True
         if self.automatic_slide_next:
-            self.change_question_view(self.current_question + 1)
+            is_last = self.current_question == (self.first_question_num + self.question_counts - 1)
+            if not is_last:
+                self.change_question_view(self.current_question + 1)
 
     # Toggle notification on question button in left_section
     # This will only get called outside of this function,
