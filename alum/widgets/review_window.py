@@ -397,10 +397,14 @@ class ReviewTestWindow(QWidget):
         with open(self.data_path, "r") as f:
             data = orjson.loads(f.read())
 
+        # rename self.test_name key to new_name
+        new_keys = list(data.keys())
+        new_keys = [x.replace(self.test_name, new_name) for x in new_keys]
+        values = list(data.values())
+        new_data = {new_keys[i]: values[i] for i in range(len(values))}
+
         with open(self.data_path, "wb") as f:
-            # rename self.test_name key to new_name
-            data[new_name] = data.pop(self.test_name)
-            f.write(orjson.dumps(data, option=ORJSON_OPTIONS))
+            f.write(orjson.dumps(new_data, option=ORJSON_OPTIONS))
 
         # Update Review windows
         self.title_test_name.setText(
