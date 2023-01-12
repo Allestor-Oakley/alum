@@ -26,7 +26,6 @@ from alum.constants import ORJSON_OPTIONS
 # TODO Pause feature
 # TODO milisecond instead of second
 # FIXME if the user click the button too fast (when it still animating sliding) it shows weird behaviour
-# FIXME after renaming, the test list scroll to the top
 
 
 class MainWindow(QMainWindow):
@@ -170,6 +169,7 @@ class ReviewTestPane(QWidget):
         review_test = ReviewTestWindow(test_name, test_data, self.data_path)
         review_test.windowClosed.connect(self.close_window)
         review_test.dataUpdated.connect(self.update_test_list)
+        review_test.testNameRenamed.connect(self.update_test_name)
         self.test_review_windows.append(review_test)
         self.test_review_windows[-1].show()
 
@@ -208,6 +208,15 @@ class ReviewTestPane(QWidget):
 
         with open(self.data_path, "wb") as f:
             f.write(orjson.dumps(self.data, option=ORJSON_OPTIONS))
+
+    def update_test_name(self, old_name, new_name):
+        idx = list(self.data.keys()).index(old_name)
+        widget = self.test_list_scroll.widget().layout().itemAt(idx).widget()
+        widget.test_name_btn.setText(new_name)
+
+        # reload new data
+        with open(self.data_path, "r") as f:
+            self.data = orjson.loads(f.read())
 
 
 class TestListWidget(QWidget):
@@ -294,15 +303,15 @@ class TestListItem(QWidget):
         self.setLayout(QHBoxLayout())
         self.layout().setContentsMargins(4, 4, 4, 4)
 
-        test_name_btn = QPushButton(test_name)
-        test_name_btn.setFixedWidth(190)
-        test_name_btn.setStyleSheet("text-align: left;")
-        test_name_btn.clicked.connect(self.test_name_btn_clicked)
-        self.layout().addWidget(test_name_btn)
+        self.test_name_btn = QPushButton(test_name)
+        self.test_name_btn.setFixedWidth(190)
+        self.test_name_btn.setStyleSheet("text-align: left;")
+        self.test_name_btn.clicked.connect(self.test_name_btn_clicked)
+        self.layout().addWidget(self.test_name_btn)
 
-        del_test_btn = QPushButton("Hapus")
-        del_test_btn.clicked.connect(self.delete_btn_clicked)
-        self.layout().addWidget(del_test_btn)
+        self.del_test_btn = QPushButton("Hapus")
+        self.del_test_btn.clicked.connect(self.delete_btn_clicked)
+        self.layout().addWidget(self.del_test_btn)
 
     def test_name_btn_clicked(self):
         self.testNameClicked.emit(self.test_name)

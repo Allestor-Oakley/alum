@@ -27,6 +27,7 @@ class ReviewTestWindow(QWidget):
 
     # Signals
     dataUpdated = Signal()
+    testNameRenamed = Signal(str, str)
     windowClosed = Signal(QWidget)
 
     def __init__(self, test_name: str, test_data: dict, data_path: str):
@@ -411,10 +412,10 @@ class ReviewTestWindow(QWidget):
             self.title_test_name.text().replace(self.test_name, new_name)
         )
         self.setWindowTitle(self.windowTitle().replace(self.test_name, new_name))
-        self.test_name = new_name
 
         # Update test list
-        self.dataUpdated.emit()
+        self.testNameRenamed.emit(self.test_name, new_name)
+        self.test_name = new_name
 
     @Slot(QTableWidgetItem)
     def table_item_clicked(self, it: QTableWidgetItem):
