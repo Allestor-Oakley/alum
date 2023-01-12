@@ -37,7 +37,7 @@ class ReviewTestWindow(QWidget):
         self.data_path = data_path
 
         self.setFixedSize(500, 550)
-        self.setWindowTitle(f"Tinjauan tes '{test_name}'")
+        self.setWindowTitle(self.get_title(self.test_name))
         self.setLayout(QVBoxLayout())
 
         #########################################
@@ -83,7 +83,7 @@ class ReviewTestWindow(QWidget):
         # Title and rename button
         ########################################
         # title
-        self.title_test_name = QLabel(f"Tinjauan tes '{self.test_name}'")
+        self.title_test_name = QLabel(self.get_title(self.test_name))
         self.title_test_name.setStyleSheet("font-size: 22px;")
         self.stats_slide.layout().addWidget(self.title_test_name)
 
@@ -283,6 +283,9 @@ class ReviewTestWindow(QWidget):
 
         self.main_slide.addWidget(self.test_note_slide)
 
+    def get_title(self, test_name):
+        return f"Tinjauan tes '{test_name}'"
+
     # sort_method should be "correctness", "time", "number"(default)
     def get_sorted_result(
         self, sort_method: str = "number", ascending: bool = True
@@ -408,10 +411,8 @@ class ReviewTestWindow(QWidget):
             f.write(orjson.dumps(new_data, option=ORJSON_OPTIONS))
 
         # Update Review windows
-        self.title_test_name.setText(
-            self.title_test_name.text().replace(self.test_name, new_name)
-        )
-        self.setWindowTitle(self.windowTitle().replace(self.test_name, new_name))
+        self.title_test_name.setText(self.get_title(new_name))
+        self.setWindowTitle(self.get_title(new_name))
 
         # Update test list
         self.testNameRenamed.emit(self.test_name, new_name)
@@ -472,6 +473,7 @@ class ReviewTestWindow(QWidget):
             f.write(orjson.dumps(data, option=ORJSON_OPTIONS))
 
         # Update list to avoid inconsistent data
+
         self.dataUpdated.emit()
 
 
