@@ -202,7 +202,7 @@ class ReviewTestPane(QWidget):
 
         self.update_test_list()
 
-    # data Updated
+    # data Updated, just write it to the file, because the order already changed in TestListWidget
     def update_data_order(self, new_data):
         self.data = new_data
 
@@ -219,12 +219,13 @@ class TestListWidget(QWidget):
     def __init__(self, data) -> None:
         super().__init__()
         self.data = data
+        self.margin = 4
 
         self.setAcceptDrops(True)
         self.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Minimum)
         self.setLayout(QVBoxLayout())
         self.layout().setSpacing(0)
-        self.layout().setContentsMargins(4, 4, 4, 4)
+        self.layout().setContentsMargins(*[self.margin for _ in range(4)])
 
         # Add buttons (test name and delete test) to the grid
         test_names = list(self.data.keys())
@@ -248,15 +249,31 @@ class TestListWidget(QWidget):
         pos = event.position()
         widget = event.source()
 
-        for n in range(self.layout().count()):
-            # Get the widget at each index in turn.
-            w = self.layout().itemAt(n).widget()
-            if pos.y() < w.y() + w.size().height() // 2:
-                # We didn't drag past this widget.
-                # insert to the left of it.
-                self.layout().insertWidget(n - 1, widget)
-                break
+        width = widget.height()
+        idx = int((pos.y() - self.margin) // width)
 
+        prev_idx = int(widget.y() - self.margin) // width
+
+        # Down one list
+        move_down = pos.y() - (width // 2) > width * idx
+
+        # I don't know what I'm doing here, but the code works
+        # Go Down
+        if prev_idx < idx:
+            if not move_down:
+                idx = idx - 1
+        # Go Up
+        elif prev_idx > idx:
+            if move_down:
+                idx = idx + 1
+
+        # If it's at the end of the list, addWidget instead
+        if idx == len(self.data.keys()):
+            self.layout().addWidget(widget)
+        else:
+            self.layout().insertWidget(idx, widget)
+
+        # Update list
         new_data = {}
         for n in range(self.layout().count()):
             test_name = self.layout().itemAt(n).widget().test_name
