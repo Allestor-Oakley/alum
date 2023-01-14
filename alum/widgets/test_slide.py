@@ -176,8 +176,11 @@ class TestWidget(QWidget):
         )
         return answers_slide
 
-    def get_question_btn(self, num: int) -> QPushButton:
-        return self.left_section.findChild(QPushButton, f"questionButton{num}")
+    def get_question_btn(self, num: int):
+        question_btn: QuestionNumberButton = self.left_section.findChild(
+            QPushButton, f"questionButton{num}"
+        )
+        return question_btn
 
     # Called every tick
     def update_timer(self):
@@ -258,7 +261,9 @@ class TestWidget(QWidget):
 
         # Slide to the next question if automatic_slide_next is True
         if self.automatic_slide_next:
-            is_last = self.current_question == (self.first_question_num + self.question_counts - 1)
+            is_last = self.current_question == (
+                self.first_question_num + self.question_counts - 1
+            )
             if not is_last:
                 self.change_question_view(self.current_question + 1)
 
