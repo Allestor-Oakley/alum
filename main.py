@@ -25,7 +25,6 @@ from alum.constants import ORJSON_OPTIONS
 
 # TODO Pause feature
 # TODO milisecond instead of second
-# FIXME if the user click the button too fast (when it still animating sliding) it shows weird behaviour
 
 
 class MainWindow(QMainWindow):

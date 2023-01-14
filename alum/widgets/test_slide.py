@@ -160,6 +160,12 @@ class TestWidget(QWidget):
             answer_view.finishButtonClicked.connect(self.finish_test)
             self.answers_slide.addWidget(answer_view)
 
+        # To prevent user from changing question too fast
+        self.still_sliding = False
+        self.sliding_timer = QTimer(self)
+        self.sliding_timer.setInterval(self.answers_slide.m_speed)
+        self.sliding_timer.timeout.connect(self.sliding_timer_timeout)
+
         # Set style and other things after all things have been done
         self.change_question_view(self.current_question)
 
@@ -211,6 +217,8 @@ class TestWidget(QWidget):
     # The only function to call when user want to change question view
     # stop previous answer timer, and start the next answer timer
     def change_question_view(self, question_num: int):
+        if self.still_sliding:
+            return
         current_answer = self.get_answer_slide(question_num)
         previous_answer = self.get_answer_slide(self.current_question)
         self.highlight_selected_qb(self.current_question, question_num)
@@ -220,6 +228,14 @@ class TestWidget(QWidget):
         ###
         self.current_question = question_num
         self.answers_slide.slideInWgt(current_answer)
+
+        # Prevent user from changing question too fast
+        self.still_sliding = True
+        self.sliding_timer.start()
+
+    def sliding_timer_timeout(self):
+        self.sliding_timer.stop()
+        self.still_sliding = False
 
     # Highlight selected question button
     def highlight_selected_qb(self, prev: int, next: int):
