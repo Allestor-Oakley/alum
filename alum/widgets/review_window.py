@@ -7,6 +7,7 @@ from PySide6.QtWidgets import (
     QDialog,
     QFormLayout,
     QHBoxLayout,
+    QInputDialog,
     QLabel,
     QPlainTextEdit,
     QPushButton,
@@ -107,13 +108,13 @@ class ReviewTestWindow(QWidget):
         stats_list.setLayout(QFormLayout())
         stats_list.setStyleSheet("font-size: 14px;")
 
-        left_colon = ":    "
+        self.left_colon = ":    "
 
         # Date
         tests_date = self.test_data["tanggal_tes"]
         tests_date = self.format_date(tests_date)
         stats_list.layout().addRow(
-            QLabel("Tanggal tes"), QLabel(f"{left_colon}{tests_date}")
+            QLabel("Tanggal tes"), QLabel(f"{self.left_colon}{tests_date}")
         )
 
         # Time limit
@@ -123,27 +124,27 @@ class ReviewTestWindow(QWidget):
         else:
             time_limit = "tidak ada"
         stats_list.layout().addRow(
-            QLabel("Batas Waktu"), QLabel(f"{left_colon}{time_limit}")
+            QLabel("Batas Waktu"), QLabel(f"{self.left_colon}{time_limit}")
         )
 
         # Question counts
         question_counts = self.test_data["jumlah_soal"]
         stats_list.layout().addRow(
-            QLabel("Jumlah Soal"), QLabel(f"{left_colon}{question_counts}")
+            QLabel("Jumlah Soal"), QLabel(f"{self.left_colon}{question_counts}")
         )
 
         # Questions range
         first_num = self.test_data["nomor_pertama"]
-        question_range = f"{first_num} - {first_num+question_counts-1}"
-        stats_list.layout().addRow(
-            QLabel("Nomor-nomor Soal"), QLabel(f"{left_colon}{question_range}")
-        )
+        question_range = self.get_questions_range(first_num, question_counts)
+        self.range_text = QLabel(f"{self.left_colon}{question_range}")
+        self.range_text.mousePressEvent = self.change_first_num
+        stats_list.layout().addRow(QLabel("Nomor-nomor Soal"), self.range_text)
 
         # Question options
         question_options = self.test_data["opsi_soal"]
         question_options = ", ".join(question_options)
         stats_list.layout().addRow(
-            QLabel("Opsi Soal"), QLabel(f"{left_colon}{question_options}")
+            QLabel("Opsi Soal"), QLabel(f"{self.left_colon}{question_options}")
         )
 
         # Total time used
@@ -151,7 +152,7 @@ class ReviewTestWindow(QWidget):
         total_time = self.format_time(total_time)
         stats_list.layout().addRow(
             QLabel("Waktu yang digunakan"),
-            QLabel(f"{left_colon}{total_time}"),
+            QLabel(f"{self.left_colon}{total_time}"),
         )
 
         # Corret, Incorrect, and Undetermined counts
@@ -173,14 +174,14 @@ class ReviewTestWindow(QWidget):
                 correct_count += 1
 
         stats_list.layout().addRow(
-            QLabel("Jawaban benar"), QLabel(f"{left_colon}{correct_count} soal")
+            QLabel("Jawaban benar"), QLabel(f"{self.left_colon}{correct_count} soal")
         )
         stats_list.layout().addRow(
-            QLabel("Jawaban salah"), QLabel(f"{left_colon}{incorrect_count} soal")
+            QLabel("Jawaban salah"), QLabel(f"{self.left_colon}{incorrect_count} soal")
         )
         stats_list.layout().addRow(
             QLabel("Tidak dapat ditentukan"),
-            QLabel(f"{left_colon}{undetermined_count} soal"),
+            QLabel(f"{self.left_colon}{undetermined_count} soal"),
         )
 
         self.stats_slide.layout().addWidget(stats_list)
@@ -285,6 +286,10 @@ class ReviewTestWindow(QWidget):
 
     def get_title(self, test_name):
         return f"Tinjauan tes '{test_name}'"
+
+    # To make it consistent when updated
+    def get_questions_range(self, first_num, counts):
+        return f"{first_num} - {first_num+counts-1}"
 
     # sort_method should be "correctness", "time", "number"(default)
     def get_sorted_result(
@@ -435,6 +440,58 @@ class ReviewTestWindow(QWidget):
                 self.__prev_click = question_num
         else:
             self.__prev_click = 0
+
+    def change_first_num(self, _):
+        first_num = self.test_data["nomor_pertama"]
+        question_counts = self.test_data["jumlah_soal"]
+        new_first_num, ok = QInputDialog().getInt(
+            self, "Ganti nomor pertama", "Nomor pertama:", first_num, 1, 99, 1
+        )
+        if not ok:
+            return
+        # If there is nothing to change
+        if new_first_num == first_num:
+            return
+
+        new_nums = [str(i + new_first_num) for i in range(question_counts)]
+        old_nums = self.test_data["kunci_jawaban"].keys()
+        nums = zip(old_nums, new_nums)
+
+        # Change questions in test questions, answer key, and time spend
+        answer_key = self.test_data["kunci_jawaban"].copy()
+        test_answer = self.test_data["jawaban_tes"].copy()
+        time_spent = self.test_data["waktu_yang_digunakan"]["per_soal"].copy()
+        for old, new in nums:
+            answer_key[new] = answer_key.pop(old)
+            test_answer[new] = test_answer.pop(old)
+            time_spent[new] = time_spent.pop(old)
+        self.test_data["kunci_jawaban"] = answer_key
+        self.test_data["jawaban_tes"] = test_answer
+        self.test_data["waktu_yang_digunakan"]["per_soal"] = time_spent
+
+        # Update first num
+        self.test_data["nomor_pertama"] = new_first_num
+
+        # update range text
+        self.range_text.setText(
+            self.left_colon +
+            self.get_questions_range(new_first_num, question_counts)
+        )
+
+        # update table
+        for idx in range(question_counts):
+            self.table.item(idx, 0).setText(str(new_nums[idx]))
+
+        # Update data
+        with open(self.data_path, "r") as f:
+            data = orjson.loads(f.read())
+
+        data[self.test_name] = self.test_data
+
+        with open(self.data_path, "wb") as f:
+            f.write(orjson.dumps(data, option=ORJSON_OPTIONS))
+
+        self.dataUpdated.emit()
 
     def change_answer_key(self, question_num, current_idx, options):
         dialog = ChangeAnswerDialog(options, current_idx)
