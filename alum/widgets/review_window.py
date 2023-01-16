@@ -482,16 +482,7 @@ class ReviewTestWindow(QWidget):
         for idx in range(question_counts):
             self.table.item(idx, 0).setText(str(new_nums[idx]))
 
-        # Update data
-        with open(self.data_path, "r") as f:
-            data = orjson.loads(f.read())
-
-        data[self.test_name] = self.test_data
-
-        with open(self.data_path, "wb") as f:
-            f.write(orjson.dumps(data, option=ORJSON_OPTIONS))
-
-        self.dataUpdated.emit()
+        self.write_data()
 
     def change_answer_key(self, question_num, current_idx, options):
         dialog = ChangeAnswerDialog(options, current_idx)
@@ -508,7 +499,16 @@ class ReviewTestWindow(QWidget):
         self.test_data["kunci_jawaban"][question_num] = options[idx]
         self.update_table()
 
-        # Read and modify file
+        self.write_data()
+
+    def save_test_note(self):
+        self.test_data["catatan_tes"] = self.test_note.toPlainText()
+
+        self.write_data()
+
+    def write_data(self):
+        """ Write self.test_data to data_path """
+        # Update data
         with open(self.data_path, "r") as f:
             data = orjson.loads(f.read())
 
@@ -516,20 +516,6 @@ class ReviewTestWindow(QWidget):
 
         with open(self.data_path, "wb") as f:
             f.write(orjson.dumps(data, option=ORJSON_OPTIONS))
-
-        # Update list to avoid inconsistent data
-        self.dataUpdated.emit()
-
-    def save_test_note(self):
-        with open(self.data_path, "r") as f:
-            data = orjson.loads(f.read())
-
-        data[self.test_name]["catatan_tes"] = self.test_note.toPlainText()
-
-        with open(self.data_path, "wb") as f:
-            f.write(orjson.dumps(data, option=ORJSON_OPTIONS))
-
-        # Update list to avoid inconsistent data
 
         self.dataUpdated.emit()
 
