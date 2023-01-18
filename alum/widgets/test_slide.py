@@ -15,7 +15,7 @@ from PySide6.QtCore import QTimer, Qt, Signal
 
 from .custom_widgets import SlidingStackedWidget
 from .answer_slide import AnswerKeySlide
-from ..constants import GREEN_BTN_QSS, RED_BTN_QSS
+from ..constants import BLUE_1, BLUE_2, GREEN_BTN_QSS, RED_BTN_QSS
 
 
 # Test view slide
@@ -242,7 +242,7 @@ class TestWidget(QWidget):
 
     # Highlight selected question button
     def highlight_selected_qb(self, prev: int, next: int):
-        selected_style = "background-color: #283593;color: white;"
+        selected_style = f"background-color: {BLUE_1};color: white;"
         # Remove previous style
         prev = self.get_question_btn(prev)
         prev_style = prev.styleSheet()
@@ -511,7 +511,7 @@ class AnswerWidget(QWidget):
             )
             prev.setStyleSheet("")
         current = self.middle_section.findChild(QPushButton, f"answerButton{answer}")
-        current.setStyleSheet("background: #3F51B5;color: white;")
+        current.setStyleSheet(f"background: {BLUE_2};color: white;")
 
     # idx_move is either 1 (next) or -1 (previous)
     def change_question(self, idx_move):

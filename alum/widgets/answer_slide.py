@@ -20,6 +20,7 @@ import orjson
 
 from .finish_slide import FinishSlide
 from ..constants import (
+    BLUE_2,
     ORJSON_OPTIONS,
     RED_BTN_QSS,
     GREEN_BTN_QSS,
@@ -221,7 +222,7 @@ class AnswerKeyWidget(QWidget):
         super().__init__()
         self.question_options = question_options
         self.question_number = question_number
-        self.highlight_style = "background: #3F51B5;color: white;"
+        self.highlight_style = f"background: {BLUE_2};color: white;"
 
         self.setLayout(QHBoxLayout())
         self.setObjectName(f"answerKey{self.question_number}")

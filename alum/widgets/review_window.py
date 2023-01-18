@@ -20,7 +20,7 @@ import orjson
 
 from .custom_widgets import SlidingStackedWidget
 from .answer_slide import TestNameDialog
-from ..constants import DAY_INDO, GREEN_BTN_QSS, MONTH_INDO, ORJSON_OPTIONS, TIME_FORMAT
+from ..constants import DAY_INDO, GREEN_1, GREEN_BTN_QSS, MONTH_INDO, ORJSON_OPTIONS, RED_2, TIME_FORMAT
 
 
 class ReviewTestWindow(QWidget):
@@ -360,13 +360,13 @@ class ReviewTestWindow(QWidget):
             # if the test answer is not the same as the answer key, it's incorrect
             # else it is correct
             if test_answer == "tidak ada":
-                bg = "#C62828"
+                bg = RED_2
             elif answer_key == "tidak ada":
                 bg = ""
             elif test_answer != answer_key:
-                bg = "#C62828"
+                bg = RED_2
             else:
-                bg = "#2E7D32"
+                bg = GREEN_1
 
             for (idx, value) in enumerate(row_value):
                 # Format time, time is always the last in row_value
