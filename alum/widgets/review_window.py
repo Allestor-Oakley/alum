@@ -120,7 +120,7 @@ class ReviewTestWindow(QWidget):
         # Time limit
         time_limit = int(self.test_data["batas_waktu"])
         if time_limit != 0:
-            self.format_time(str(time_limit))
+            time_limit = self.format_time(str(time_limit))
         else:
             time_limit = "tidak ada"
         stats_list.layout().addRow(
