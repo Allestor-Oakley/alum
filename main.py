@@ -125,7 +125,7 @@ class ReviewTestPane(QWidget):
         self.test_review_windows = []
 
         self.setLayout(QVBoxLayout())
-        self.setFixedWidth(300)
+        self.setFixedWidth(270)
 
         # Side pane title
         label = QLabel("Daftar tes:")
@@ -308,7 +308,8 @@ class TestListItem(QWidget):
         self.test_name_btn.clicked.connect(self.test_name_btn_clicked)
         self.layout().addWidget(self.test_name_btn)
 
-        self.del_test_btn = QPushButton("Hapus")
+        self.del_test_btn = QPushButton("X")
+        self.del_test_btn.setToolTip("Hapus data tes")
         self.del_test_btn.clicked.connect(self.delete_btn_clicked)
         self.layout().addWidget(self.del_test_btn)
 
