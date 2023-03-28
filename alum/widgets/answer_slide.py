@@ -120,6 +120,8 @@ class AnswerKeySlide(QWidget):
     # > Time spent for each question
     # -Date
     # -Note (empty)
+    # the reasons why current_time is a parameter is because
+    # the argument is used in different places
     def get_test_result(self, current_time):
         test_result = {}
 
@@ -193,8 +195,11 @@ class AnswerKeySlide(QWidget):
             data = orjson.loads(data)
 
         with open(data_path, "wb") as f:
-            data[test_name_dialog.test_name] = test_result
-            f.write(orjson.dumps(data, option=ORJSON_OPTIONS))
+            # Add new test data as the first key
+            new_data = {}
+            new_data[test_name_dialog.test_name] = test_result
+            new_data = dict(new_data, **data)
+            f.write(orjson.dumps(new_data, option=ORJSON_OPTIONS))
 
         # Go to the next slide
         finish_slide = FinishSlide()
