@@ -124,15 +124,23 @@ class TestWidget(QWidget):
         self.right_section.setLayout(QVBoxLayout())
         self.layout().addWidget(self.right_section)
 
-        # Finish button container and finish button
-        self.finish_btn_cont = QWidget()
-        self.finish_btn_cont.setLayout(QVBoxLayout())
+        # Pause button and end test button
+        self.top_buttons_cont = QWidget()
+        self.top_buttons_cont.setLayout(QHBoxLayout())
+        self.right_section.layout().addWidget(self.top_buttons_cont)
+
+        self.pause_btn = QPushButton("| |")
+        self.pause_btn.setFixedWidth(30)
+        self.pause_btn.clicked.connect(self.pause_test)
+        self.top_buttons_cont.layout().addWidget(self.pause_btn)
+
+        self.top_buttons_cont.layout().addWidget(QWidget()) # Spacer
+
         self.finish_btn = QPushButton("Selesaikan Tes")
         self.finish_btn.clicked.connect(self.finish_test)
         self.finish_btn.setStyleSheet(GREEN_BTN_QSS)
-        self.finish_btn_cont.layout().addWidget(self.finish_btn)
-        self.finish_btn_cont.setContentsMargins(420, 0, 0, 0)
-        self.right_section.layout().addWidget(self.finish_btn_cont)
+        self.finish_btn.setFixedWidth(180)
+        self.top_buttons_cont.layout().addWidget(self.finish_btn)
 
         # Answer slide
         self.answers_slide = SlidingStackedWidget()
@@ -239,6 +247,25 @@ class TestWidget(QWidget):
     def sliding_timer_timeout(self):
         self.sliding_timer.stop()
         self.still_sliding = False
+
+    # Pause test, stop question buttons and total timer and show messagebox
+    # continue the test after the messagebox is closed
+    def pause_test(self):
+        qm = QMessageBox
+
+        question_slide = self.get_answer_slide(self.current_question)
+        question_slide.stop_timer()
+        self.total_timer.stop()
+
+        _ = qm().information(
+            self,
+            "Pemberitahuan",
+            "Tes telah diberhentikan sementara.\n\nKlik tombol Ok atau tutup pemberitahuan\nini untuk melanjutkan.",
+            qm.Ok,
+        )
+
+        question_slide.start_timer()
+        self.total_timer.start()
 
     # Highlight selected question button
     def highlight_selected_qb(self, prev: int, next: int):
