@@ -155,34 +155,21 @@ class ReviewTestWindow(QWidget):
             QLabel(f"{self.left_colon}{total_time}"),
         )
 
-        # Corret, Incorrect, and Undetermined counts
-        test_and_key = zip(
-            self.test_data["jawaban_tes"].values(),
-            self.test_data["kunci_jawaban"].values(),
+        self.correct_counts_label = QLabel()
+        self.incorrect_counts_label = QLabel()
+        self.undetermined_count_label = QLabel()
+        stats_list.layout().addRow(
+            QLabel("Jawaban benar"), self.correct_counts_label
         )
-        correct_count = 0
-        incorrect_count = 0
-        undetermined_count = 0
-        for test, key in test_and_key:
-            if test == "":
-                incorrect_count += 1
-            elif key == "":
-                undetermined_count += 1
-            elif test != key:
-                incorrect_count += 1
-            else:
-                correct_count += 1
+        stats_list.layout().addRow(
+            QLabel("Jawaban salah"), self.incorrect_counts_label
+        )
+        stats_list.layout().addRow(
+            QLabel("Tidak dapat ditentukan"), self.undetermined_count_label
+        )
 
-        stats_list.layout().addRow(
-            QLabel("Jawaban benar"), QLabel(f"{self.left_colon}{correct_count} soal")
-        )
-        stats_list.layout().addRow(
-            QLabel("Jawaban salah"), QLabel(f"{self.left_colon}{incorrect_count} soal")
-        )
-        stats_list.layout().addRow(
-            QLabel("Tidak dapat ditentukan"),
-            QLabel(f"{self.left_colon}{undetermined_count} soal"),
-        )
+        # Corret, Incorrect, and Undetermined counts
+        self.update_ciu_counts()
 
         self.stats_slide.layout().addWidget(stats_list)
         self.main_slide.addWidget(self.stats_slide)
@@ -343,6 +330,29 @@ class ReviewTestWindow(QWidget):
 
         return data
 
+    # Update correct, incorrect, and undetermined counts
+    def update_ciu_counts(self):
+        test_and_key = zip(
+            self.test_data["jawaban_tes"].values(),
+            self.test_data["kunci_jawaban"].values(),
+        )
+        correct_count = 0
+        incorrect_count = 0
+        undetermined_count = 0
+        for test, key in test_and_key:
+            if test == "":
+                incorrect_count += 1
+            elif key == "":
+                undetermined_count += 1
+            elif test != key:
+                incorrect_count += 1
+            else:
+                correct_count += 1
+
+        self.correct_counts_label.setText(f"{self.left_colon}{correct_count} soal")
+        self.incorrect_counts_label.setText(f"{self.left_colon}{incorrect_count} soal")
+        self.undetermined_count_label.setText(f"{self.left_colon}{undetermined_count} soal")
+
     # Called everytime there is an update on the data
     def update_table(self):
         sort_method = self.SORT_METHODS[self.sort_method.currentIndex()]
@@ -501,6 +511,8 @@ class ReviewTestWindow(QWidget):
 
         self.write_data()
 
+        self.update_ciu_counts()
+
     def save_test_note(self):
         self.test_data["catatan_tes"] = self.test_note.toPlainText()
 
@@ -550,4 +562,6 @@ class ChangeAnswerDialog(QDialog):
 
         self.reject_button = QPushButton("Batalkan")
         self.reject_button.clicked.connect(lambda: self.reject())
+        # Corret, Incorrect, and Undetermined counts
+        self.update_ciu_counts()
         self.buttons.layout().addWidget(self.reject_button)
