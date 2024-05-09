@@ -1,4 +1,4 @@
-# ALUM (Aplikasi Ujian UTBK Mandiri)
+# ALUM (Aplikasi Latihan UTBK Mandiri)
 
 ALUM adalah aplikasi untuk membantu siswa dalam berlatih UTBK (SNBT).
 
