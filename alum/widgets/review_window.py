@@ -562,6 +562,4 @@ class ChangeAnswerDialog(QDialog):
 
         self.reject_button = QPushButton("Batalkan")
         self.reject_button.clicked.connect(lambda: self.reject())
-        # Corret, Incorrect, and Undetermined counts
-        self.update_ciu_counts()
         self.buttons.layout().addWidget(self.reject_button)
